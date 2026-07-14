@@ -30,10 +30,12 @@ export default {
       return handleSitemap(env);
     } else if (pathname === '/llms.txt') {
       return handleLlmsTxt(env);
+    } else if (pathname === '/robots.txt') {
+      return handleRobots(env);
     } else if (pathname === '/admin/seed' && request.method === 'POST') {
       return handleSeed(env, request);
     } else {
-      return html404();
+      return html404(env);
     }
   }
 };
@@ -270,7 +272,7 @@ async function handleVehicleDetail(env, slug) {
     </div>
   `;
 
-  return htmlResponse(title, content);
+  return htmlResponse(title, content, env);
 }
 
 async function handleLendersList(env) {
@@ -350,7 +352,7 @@ async function handleLenderDetail(env, slug) {
     </div>
   `;
 
-  return htmlResponse(title, content);
+  return htmlResponse(title, content, env);
 }
 
 async function handleComparison(env, id1, id2) {
@@ -412,7 +414,7 @@ async function handleComparison(env, id1, id2) {
     </table>
   `;
 
-  return htmlResponse(title, content);
+  return htmlResponse(title, content, env);
 }
 
 async function handleCategory(env, slug) {
@@ -454,7 +456,7 @@ async function handleCategory(env, slug) {
     </div>
   `;
 
-  return htmlResponse(title, content);
+  return htmlResponse(title, content, env);
 }
 
 async function handleSitemap(env) {
@@ -543,6 +545,19 @@ Visit /api/items for raw JSON data export (when API is ready).
   });
 }
 
+async function handleRobots(env) {
+  const robots = `User-agent: *
+Allow: /
+Disallow: /admin/
+
+Sitemap: ${env.SITE_URL}/sitemap.xml
+`;
+
+  return new Response(robots, {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+  });
+}
+
 async function handleSeed(env, request) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '');
   const seedToken = env.SEED_TOKEN || 'dev-seed-token';
@@ -585,19 +600,36 @@ function slugify(text) {
     .replace(/^-+|-+$/g, '');
 }
 
-function htmlResponse(title, content) {
-  return new Response(html(title, content), {
+function htmlResponse(title, content, env) {
+  return new Response(html(title, content, env), {
     headers: { 'Content-Type': 'text/html; charset=utf-8' }
   });
 }
 
-function html(title, content) {
+function html(title, content, env = {}) {
+  const gaId = env.GA_ID || '';
+  const gscToken = env.GSC_TOKEN || '';
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title} | Vehicle Lease</title>
+  ${gscToken ? `<meta name="google-site-verification" content="${gscToken}">` : ''}
+  <meta name="description" content="Find your perfect lease deal. Browse 127 UK car models and compare lease offers from 8+ lenders.">
+  <meta property="og:title" content="${title}">
+  <meta property="og:description" content="Vehicle lease comparison platform">
+  <meta property="og:type" content="website">`
+    + (gaId ? `
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=${gaId}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '${gaId}');
+  </script>` : '') + `
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -748,6 +780,6 @@ function html(title, content) {
 </html>`;
 }
 
-function html404() {
-  return htmlResponse('Not Found', '<h1>404 - Page Not Found</h1><p><a href="/">← Back to Home</a></p>');
+function html404(env = {}) {
+  return htmlResponse('Not Found', '<h1>404 - Page Not Found</h1><p><a href="/">← Back to Home</a></p>', env);
 }
