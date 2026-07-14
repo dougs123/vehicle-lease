@@ -1,0 +1,40 @@
+name: Deploy worker
+
+# Deploy vehicle-lease worker to Cloudflare on push to main branch
+# when Worker source or config changes.
+# Secrets (INGEST_KEY) persist across deploys — this only updates code.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/index.js'
+      - 'wrangler.jsonc'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Deploy to Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy
+
+      - name: Verify deployment
+        run: |
+          echo "✅ Deployed to https://vehicle-lease.rewardspy.workers.dev"
