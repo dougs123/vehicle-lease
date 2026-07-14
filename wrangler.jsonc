@@ -1,0 +1,26 @@
+{
+  "name": "vehicle-lease",
+  "type": "service",
+  "main": "src/index.js",
+  "compatibility_date": "2024-12-16",
+  "env": {
+    "production": {
+      "routes": [
+        {
+          "pattern": "vehicle-lease.co.uk/*",
+          "zone_name": "vehicle-lease.co.uk"
+        }
+      ]
+    }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "vehicle_lease",
+      "database_id": "to_be_created"
+    }
+  ],
+  "vars": {
+    "SITE_URL": "https://vehicle-lease.co.uk"
+  }
+}

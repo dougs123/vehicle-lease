@@ -1,0 +1,15 @@
+{
+  "name": "vehicle-lease",
+  "version": "1.0.0",
+  "description": "Vehicle lease comparison platform",
+  "type": "module",
+  "scripts": {
+    "build": "node site/scripts/build-seed.mjs",
+    "dev": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "seed": "wrangler d1 execute vehicle_lease --file site/seed/data.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^3.28.0"
+  }
+}

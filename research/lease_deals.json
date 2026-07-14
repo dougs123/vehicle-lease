@@ -1,0 +1,134 @@
+[
+  {
+    "make": "Ford",
+    "model": "Fiesta",
+    "year": 2024,
+    "lender": "Lease Loco",
+    "monthly_price_gbp": 249,
+    "term_months": 48,
+    "annual_mileage": 10000,
+    "upfront_cost_gbp": 1500,
+    "description": "48-month contract with 10k miles/year"
+  },
+  {
+    "make": "Ford",
+    "model": "Fiesta",
+    "year": 2024,
+    "lender": "You Drive",
+    "monthly_price_gbp": 265,
+    "term_months": 36,
+    "annual_mileage": 12000,
+    "upfront_cost_gbp": 2000,
+    "description": "36-month contract with 12k miles/year"
+  },
+  {
+    "make": "Ford",
+    "model": "Focus",
+    "year": 2024,
+    "lender": "Lease Loco",
+    "monthly_price_gbp": 319,
+    "term_months": 48,
+    "annual_mileage": 10000,
+    "upfront_cost_gbp": 1500,
+    "description": "48-month contract with 10k miles/year"
+  },
+  {
+    "make": "Ford",
+    "model": "Focus",
+    "year": 2024,
+    "lender": "You Drive",
+    "monthly_price_gbp": 335,
+    "term_months": 36,
+    "annual_mileage": 12000,
+    "upfront_cost_gbp": 2000,
+    "description": "36-month contract with 12k miles/year"
+  },
+  {
+    "make": "Ford",
+    "model": "Mondeo",
+    "year": 2024,
+    "lender": "Leasing.com",
+    "monthly_price_gbp": 449,
+    "term_months": 48,
+    "annual_mileage": 15000,
+    "upfront_cost_gbp": 2500,
+    "description": "48-month contract with 15k miles/year"
+  },
+  {
+    "make": "Ford",
+    "model": "Kuga",
+    "year": 2024,
+    "lender": "Lease Loco",
+    "monthly_price_gbp": 389,
+    "term_months": 48,
+    "annual_mileage": 12000,
+    "upfront_cost_gbp": 2000,
+    "description": "48-month contract with 12k miles/year"
+  },
+  {
+    "make": "Vauxhall",
+    "model": "Corsa",
+    "year": 2024,
+    "lender": "You Drive",
+    "monthly_price_gbp": 259,
+    "term_months": 48,
+    "annual_mileage": 10000,
+    "upfront_cost_gbp": 1500,
+    "description": "48-month contract with 10k miles/year"
+  },
+  {
+    "make": "Vauxhall",
+    "model": "Astra",
+    "year": 2024,
+    "lender": "Leasing.com",
+    "monthly_price_gbp": 329,
+    "term_months": 48,
+    "annual_mileage": 12000,
+    "upfront_cost_gbp": 1500,
+    "description": "48-month contract with 12k miles/year"
+  },
+  {
+    "make": "BMW",
+    "model": "3 Series",
+    "year": 2024,
+    "lender": "Leasing.com",
+    "monthly_price_gbp": 499,
+    "term_months": 48,
+    "annual_mileage": 15000,
+    "upfront_cost_gbp": 3000,
+    "description": "48-month contract with 15k miles/year"
+  },
+  {
+    "make": "BMW",
+    "model": "X3",
+    "year": 2024,
+    "lender": "ChooseMyCar",
+    "monthly_price_gbp": 579,
+    "term_months": 48,
+    "annual_mileage": 15000,
+    "upfront_cost_gbp": 3500,
+    "description": "48-month contract with 15k miles/year"
+  },
+  {
+    "make": "Nissan",
+    "model": "Qashqai",
+    "year": 2024,
+    "lender": "Lease Loco",
+    "monthly_price_gbp": 369,
+    "term_months": 48,
+    "annual_mileage": 12000,
+    "upfront_cost_gbp": 2000,
+    "description": "48-month contract with 12k miles/year"
+  },
+  {
+    "make": "Tesla",
+    "model": "Model 3",
+    "year": 2024,
+    "lender": "Vanarama",
+    "monthly_price_gbp": 549,
+    "term_months": 48,
+    "annual_mileage": 15000,
+    "upfront_cost_gbp": 4000,
+    "description": "48-month contract with 15k miles/year"
+  }
+]

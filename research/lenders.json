@@ -1,0 +1,63 @@
+[
+  {
+    "name": "Lease Loco",
+    "url": "https://www.leaseloco.com",
+    "phone": "0333 300 0370",
+    "email": "info@leaseloco.com",
+    "specialization": "Personal lease deals",
+    "description": "UK's biggest car lease deal comparison site with offers from multiple lenders"
+  },
+  {
+    "name": "You Drive",
+    "url": "https://www.youdrive.com",
+    "phone": "0203 744 3000",
+    "email": "enquiries@youdrive.com",
+    "specialization": "Personal car leasing",
+    "description": "Award-winning personal car lease provider"
+  },
+  {
+    "name": "Enterprise Rent-A-Car",
+    "url": "https://www.enterprise.co.uk",
+    "phone": "0800 800 227",
+    "specialization": "Car rental and lease",
+    "description": "Long-term lease and short-term rental options"
+  },
+  {
+    "name": "Leasing.com",
+    "url": "https://www.leasing.com",
+    "phone": "01628 770055",
+    "email": "hello@leasing.com",
+    "specialization": "Vehicle leasing platform",
+    "description": "Lease deals from multiple lenders on one platform"
+  },
+  {
+    "name": "Cazoo",
+    "url": "https://www.cazoo.co.uk",
+    "phone": "0330 180 0046",
+    "specialization": "Online car dealer with lease options",
+    "description": "Buy or lease cars online with delivery options"
+  },
+  {
+    "name": "Like You Drive",
+    "url": "https://likeyoudrive.com",
+    "phone": "0800 130 3636",
+    "specialization": "Personal car leasing",
+    "description": "Personal leasing contracts with flexible options"
+  },
+  {
+    "name": "Vanarama",
+    "url": "https://www.vanarama.com",
+    "phone": "0330 111 0222",
+    "email": "sales@vanarama.com",
+    "specialization": "Van and car leasing",
+    "description": "Wide range of vehicles for personal and business lease"
+  },
+  {
+    "name": "ChooseMyCar",
+    "url": "https://www.choosemycar.com",
+    "phone": "0800 043 8000",
+    "email": "hello@choosemycar.com",
+    "specialization": "Personal and business leasing",
+    "description": "Flexible car lease contracts with comprehensive packages"
+  }
+]
