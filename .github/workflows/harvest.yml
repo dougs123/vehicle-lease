@@ -1,0 +1,48 @@
+name: Daily lease deal harvest
+
+on:
+  schedule:
+    # Run daily at 6 AM UTC (adjust as needed)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (don''t ingest)'
+        required: false
+        default: 'false'
+
+jobs:
+  harvest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install playwright
+
+      - name: Run lease harvester
+        env:
+          INGEST_KEY: ${{ secrets.INGEST_KEY }}
+          INGEST_URL: https://vehicle-lease.rewardspy.workers.dev/ingest-batch
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            node lease-harvester.mjs --dry-run
+          else
+            node lease-harvester.mjs
+          fi
+
+      - name: Upload results (if not dry-run)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lease-deals-${{ github.run_id }}
+          path: /tmp/lease-deals.json
+          retention-days: 7

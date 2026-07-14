@@ -34,6 +34,8 @@ export default {
       return handleRobots(env);
     } else if (pathname === '/admin/seed' && request.method === 'POST') {
       return handleSeed(env, request);
+    } else if (pathname === '/ingest-batch' && request.method === 'POST') {
+      return handleIngestBatch(env, request);
     } else {
       return html404(env);
     }
@@ -578,6 +580,90 @@ async function handleSeed(env, request) {
     }
 
     return new Response(JSON.stringify({ success: true, rows: statements.length }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleIngestBatch(env, request) {
+  const ingestKey = request.headers.get('x-ingest-key');
+  const expectedKey = env.INGEST_KEY || '';
+
+  if (!expectedKey || ingestKey !== expectedKey) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  try {
+    const deals = await request.json();
+    if (!Array.isArray(deals)) {
+      return new Response(JSON.stringify({ error: 'Expected array of deals' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    let written = 0;
+
+    for (const deal of deals) {
+      // Find vehicle by make/model (matches first variant found)
+      const vehicleSlug = slugify(`${deal.make}-${deal.model}-2024`);
+      const vehicle = await env.DB
+        .prepare('SELECT id FROM vehicles WHERE slug LIKE ? LIMIT 1')
+        .bind(vehicleSlug + '%')
+        .first();
+
+      if (!vehicle) {
+        continue; // Skip if vehicle not found
+      }
+
+      // Find or create lender
+      const lenderSlug = slugify(deal.lender);
+      let lender = await env.DB
+        .prepare('SELECT id FROM lenders WHERE slug = ?')
+        .bind(lenderSlug)
+        .first();
+
+      if (!lender) {
+        // Create lender if doesn't exist
+        await env.DB
+          .prepare('INSERT INTO lenders (slug, name, url) VALUES (?, ?, ?)')
+          .bind(lenderSlug, deal.lender, '')
+          .run();
+        lender = await env.DB
+          .prepare('SELECT id FROM lenders WHERE slug = ?')
+          .bind(lenderSlug)
+          .first();
+      }
+
+      // Upsert lease deal
+      if (vehicle && lender) {
+        await env.DB
+          .prepare(`
+            INSERT INTO lease_deals (vehicle_id, lender_id, monthly_price_gbp, term_months, annual_mileage, description, source_url, last_verified)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(vehicle_id, lender_id, term_months, annual_mileage) DO UPDATE SET
+              monthly_price_gbp = excluded.monthly_price_gbp,
+              description = excluded.description,
+              last_verified = excluded.last_verified
+          `)
+          .bind(
+            vehicle.id,
+            lender.id,
+            deal.monthly_price_gbp || 0,
+            deal.term_months || 48,
+            deal.annual_mileage || 12000,
+            deal.description || deal.source || '',
+            deal.source_url || '',
+            new Date().toISOString().split('T')[0]
+          )
+          .run();
+        written++;
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, written }), {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (err) {

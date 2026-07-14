@@ -9,6 +9,10 @@
     "deploy": "npm run build && wrangler deploy",
     "seed": "wrangler d1 execute vehicle_lease --file site/seed/data.sql"
   },
+  "dependencies": {
+    "playwright": "^1.44.0",
+    "node-fetch": "^3.3.0"
+  },
   "devDependencies": {
     "wrangler": "^3.28.0"
   }

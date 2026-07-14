@@ -24,5 +24,8 @@
     "SITE_URL": "https://vehicle-lease.co.uk",
     "GA_ID": "",
     "GSC_TOKEN": ""
-  }
+  },
+  "secrets": [
+    "INGEST_KEY"
+  ]
 }
