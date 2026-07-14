@@ -25,7 +25,4 @@
     "GA_ID": "",
     "GSC_TOKEN": ""
   },
-  "secrets": [
-    "INGEST_KEY"
-  ]
 }
