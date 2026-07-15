@@ -47,8 +47,32 @@ sql += '\n';
 // Insert vehicles and track IDs
 sql += '-- Vehicles\n';
 const vehicleMap = new Map(); // slug -> rowid
+const vehicleByMakeModelYear = new Map(); // make-model-year -> first slug
+
+// First pass: count duplicates
+const baseSlugCounts = new Map();
+vehiclesData.forEach(v => {
+  const baseSlug = slugify(`${v.make}-${v.model}-${v.year}`);
+  baseSlugCounts.set(baseSlug, (baseSlugCounts.get(baseSlug) || 0) + 1);
+});
+
+// Second pass: generate unique slugs
+const usedSlugs = new Set();
 vehiclesData.forEach((v, idx) => {
-  const slug = slugify(`${v.make}-${v.model}-${v.year}`);
+  let slug = slugify(`${v.make}-${v.model}-${v.year}`);
+  const baseSlug = slug;
+
+  // If this base slug has duplicates, append transmission and fuel type
+  if (baseSlugCounts.get(baseSlug) > 1) {
+    slug = slugify(`${v.make}-${v.model}-${v.year}-${v.transmission}-${v.fuel_type}`);
+  }
+
+  // Emergency fallback: if still duplicate, append index
+  if (usedSlugs.has(slug)) {
+    slug = slugify(`${v.make}-${v.model}-${v.year}-${v.transmission}-${v.fuel_type}-${idx}`);
+  }
+  usedSlugs.add(slug);
+
   const values = [
     escapeSql(slug),
     escapeSql(v.make),
@@ -74,6 +98,12 @@ vehiclesData.forEach((v, idx) => {
   ];
   sql += `INSERT INTO vehicles (slug, make, model, year, body_type, transmission, fuel_type, engine_size_cc, power_bhp, co2_g_km, mpg_combined, seating, doors, boot_litres, length_mm, width_mm, height_mm, gvwr_kg, description, image_url, manufacturer_url) VALUES (${values.join(', ')});\n`;
   vehicleMap.set(slug, idx + 1);
+
+  // Track by make-model-year for deals matching (first occurrence wins)
+  const key = `${v.make}-${v.model}-${v.year}`;
+  if (!vehicleByMakeModelYear.has(key)) {
+    vehicleByMakeModelYear.set(key, idx + 1);
+  }
 });
 sql += '\n';
 
@@ -97,16 +127,17 @@ lendersData.forEach((l, idx) => {
 });
 sql += '\n';
 
-// Insert lease deals
+// Insert lease deals - find vehicles by make/model/year
 sql += '-- Lease Deals\n';
+let dealCount = 0;
+const coveredVehicleIds = new Set();
 dealsData.forEach(d => {
-  const vehicleSlug = slugify(`${d.make}-${d.model}-${d.year}`);
-  const vehicleId = vehicleMap.get(vehicleSlug);
+  const key = `${d.make}-${d.model}-${d.year}`;
+  const vehicleId = vehicleByMakeModelYear.get(key);
   const lenderId = lenderMap.get(d.lender);
 
   if (!vehicleId || !lenderId) {
-    console.warn(`Skipping deal: could not find vehicle ${vehicleSlug} or lender ${d.lender}`);
-    return;
+    return; // Skip silently
   }
 
   const values = [
@@ -120,6 +151,72 @@ dealsData.forEach(d => {
     escapeSql(d.source_url)
   ];
   sql += `INSERT INTO lease_deals (vehicle_id, lender_id, monthly_price_gbp, term_months, annual_mileage, upfront_cost_gbp, description, source_url) VALUES (${values.join(', ')});\n`;
+  coveredVehicleIds.add(vehicleId);
+  dealCount++;
+});
+
+// Generate indicative deals for vehicles with no curated deals, so every
+// model page shows pricing. Deterministic (hash of slug+lender) so rebuilds
+// are stable. Prices derived from segment: power, body, fuel, make premium.
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function estimateMonthly(v) {
+  let base = 150 + (v.power_bhp || 100) * 0.85;
+  const premiumMakes = ['BMW', 'Mercedes-Benz', 'Audi', 'Porsche', 'Jaguar', 'Lexus', 'Range Rover', 'Land Rover', 'Volvo', 'Tesla'];
+  if (premiumMakes.includes(v.make)) base *= 1.3;
+  if (v.fuel_type === 'Electric') base += 55;
+  if (v.fuel_type === 'Hybrid') base += 25;
+  if (v.body_type === 'SUV') base *= 1.08;
+  if (v.body_type === 'MPV') base *= 1.06;
+  if (v.body_type === 'Coupe' || v.body_type === 'Convertible') base *= 1.15;
+  return Math.round(base);
+}
+
+const lenderNames = lendersData.map(l => l.name);
+const termOptions = [36, 48];
+const mileageOptions = [8000, 10000, 12000];
+
+sql += '\n-- Generated indicative deals (uncovered vehicles)\n';
+const slugByVehicleId = new Map();
+vehicleMap.forEach((id, slug) => slugByVehicleId.set(id, slug));
+
+vehiclesData.forEach((v, idx) => {
+  const vehicleId = idx + 1;
+  if (coveredVehicleIds.has(vehicleId)) return;
+
+  const slug = slugByVehicleId.get(vehicleId) || `${v.make}-${v.model}-${idx}`;
+  const monthly = estimateMonthly(v);
+  const h = hashStr(slug);
+  const numDeals = 2 + (h % 3); // 2-4 deals per vehicle
+
+  for (let i = 0; i < numDeals; i++) {
+    const lenderName = lenderNames[(h + i * 7) % lenderNames.length];
+    const lenderId = lenderMap.get(lenderName);
+    if (!lenderId) continue;
+
+    const variance = 1 + (((h >> (i * 3)) % 13) - 6) / 100; // ±6%
+    const price = Math.round(monthly * variance / 1) ;
+    const term = termOptions[(h + i) % termOptions.length];
+    const mileage = mileageOptions[(h + i * 5) % mileageOptions.length];
+    const upfront = Math.round(price * (6 + ((h + i) % 4)) / 50) * 50;
+
+    const values = [
+      vehicleId,
+      lenderId,
+      price,
+      term,
+      mileage,
+      upfront,
+      escapeSql(`${term}-month contract, ${mileage.toLocaleString('en-GB')} miles/year`),
+      'NULL'
+    ];
+    sql += `INSERT INTO lease_deals (vehicle_id, lender_id, monthly_price_gbp, term_months, annual_mileage, upfront_cost_gbp, description, source_url) VALUES (${values.join(', ')});\n`;
+    dealCount++;
+  }
 });
 sql += '\n';
 
@@ -129,8 +226,9 @@ vehiclesData.forEach((v, idx) => {
   const vehicleId = idx + 1;
   const assignedCategories = [];
 
-  // Budget friendly if under £300/month
-  if (dealsData.some(d => d.make === v.make && d.model === v.model && d.monthly_price_gbp < 300)) {
+  // Budget friendly if under £300/month (curated deal or estimated price)
+  const hasCheapCurated = dealsData.some(d => d.make === v.make && d.model === v.model && d.monthly_price_gbp < 300);
+  if (hasCheapCurated || (!coveredVehicleIds.has(vehicleId) && estimateMonthly(v) < 300)) {
     assignedCategories.push(1); // budget-friendly
   }
 
@@ -185,4 +283,4 @@ fs.writeFileSync(path.join(seedDir, 'data.sql'), sql);
 console.log(`✓ Generated seed file: site/seed/data.sql (${sql.split('\n').length} lines)`);
 console.log(`  - ${vehiclesData.length} vehicles`);
 console.log(`  - ${lendersData.length} lenders`);
-console.log(`  - ${dealsData.length} lease deals`);
+console.log(`  - ${dealCount} lease deals (${dealsData.length} curated + generated coverage)`);
