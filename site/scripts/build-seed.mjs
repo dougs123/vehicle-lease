@@ -9,6 +9,12 @@ const vehiclesData = JSON.parse(fs.readFileSync(path.join(__dirname, '../../rese
 const lendersData = JSON.parse(fs.readFileSync(path.join(__dirname, '../../research/lenders.json'), 'utf-8'));
 const dealsData = JSON.parse(fs.readFileSync(path.join(__dirname, '../../research/lease_deals.json'), 'utf-8'));
 
+// Optional image map: "Make Model" -> Wikimedia thumb URL
+let imageMap = {};
+try {
+  imageMap = JSON.parse(fs.readFileSync(path.join(__dirname, '../../research/vehicle_images.json'), 'utf-8'));
+} catch { /* no images yet */ }
+
 // Helper to create URL-safe slugs
 function slugify(text) {
   return text.toLowerCase()
@@ -93,7 +99,7 @@ vehiclesData.forEach((v, idx) => {
     v.height_mm || 'NULL',
     v.gvwr_kg || 'NULL',
     escapeSql(v.description),
-    escapeSql(v.image_url),
+    escapeSql(v.image_url || imageMap[`${v.make} ${v.model}`]),
     escapeSql(v.manufacturer_url)
   ];
   sql += `INSERT INTO vehicles (slug, make, model, year, body_type, transmission, fuel_type, engine_size_cc, power_bhp, co2_g_km, mpg_combined, seating, doors, boot_litres, length_mm, width_mm, height_mm, gvwr_kg, description, image_url, manufacturer_url) VALUES (${values.join(', ')});\n`;

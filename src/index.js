@@ -61,7 +61,7 @@ async function handleHome(env) {
         (SELECT COUNT(*) FROM lease_deals) as deals
     `).first(),
     db.prepare(`
-      SELECT v.slug, v.make, v.model, v.year, v.body_type, v.fuel_type,
+      SELECT v.slug, v.make, v.model, v.year, v.body_type, v.fuel_type, v.image_url,
              MIN(ld.monthly_price_gbp) as min_price, COUNT(ld.id) as deal_count
       FROM vehicles v
       JOIN lease_deals ld ON v.id = ld.vehicle_id
@@ -70,7 +70,7 @@ async function handleHome(env) {
       LIMIT 8
     `).all(),
     db.prepare(`
-      SELECT v.slug, v.make, v.model, v.year, v.body_type, v.fuel_type,
+      SELECT v.slug, v.make, v.model, v.year, v.body_type, v.fuel_type, v.image_url,
              MIN(ld.monthly_price_gbp) as min_price, COUNT(ld.id) as deal_count
       FROM vehicles v
       JOIN lease_deals ld ON v.id = ld.vehicle_id
@@ -271,7 +271,7 @@ async function handleVehicleDetail(env, slug) {
       ORDER BY ld.monthly_price_gbp ASC
     `).bind(vehicle.id).all(),
     db.prepare(`
-      SELECT v.slug, v.make, v.model, v.year, v.body_type, v.fuel_type,
+      SELECT v.slug, v.make, v.model, v.year, v.body_type, v.fuel_type, v.image_url,
              MIN(ld.monthly_price_gbp) as min_price, COUNT(ld.id) as deal_count
       FROM vehicles v
       JOIN lease_deals ld ON v.id = ld.vehicle_id
@@ -462,7 +462,7 @@ async function handleLenderDetail(env, slug) {
 
   const deals = await db
     .prepare(`
-      SELECT v.slug, v.make, v.model, v.year, v.body_type, v.fuel_type,
+      SELECT v.slug, v.make, v.model, v.year, v.body_type, v.fuel_type, v.image_url,
              MIN(ld.monthly_price_gbp) as min_price, COUNT(ld.id) as deal_count
       FROM lease_deals ld
       JOIN vehicles v ON ld.vehicle_id = v.id
@@ -858,8 +858,16 @@ function categoryIcon(slug) {
   }[slug] || '🚗';
 }
 
-// Stylised side-profile car silhouettes, tinted by fuel type.
+// Real photo when available (Wikimedia Commons), else stylised silhouette.
 function carArt(v) {
+  if (v.image_url) {
+    return `<div class="car-art car-photo"><img src="${esc(v.image_url)}" alt="${esc(v.make)} ${esc(v.model)}" loading="lazy" onerror="this.parentNode.classList.add('img-fail')"></div>`;
+  }
+  return carSilhouette(v);
+}
+
+// Stylised side-profile car silhouettes, tinted by fuel type.
+function carSilhouette(v) {
   const tall = ['SUV', 'MPV', 'Estate'];
   const sleek = ['Saloon', 'Coupe', 'Convertible'];
   let body, glass;
@@ -1098,6 +1106,15 @@ function html(title, content, env = {}, opts = {}) {
     }
     .car-art { padding: 1rem 1.1rem .4rem; }
     .car-art svg { width: 100%; height: auto; display: block; }
+    .car-photo {
+      padding: 0; background: #fff; display: grid; place-items: center;
+      height: 160px; border-bottom: 1px solid #f1f5f9; overflow: hidden;
+    }
+    .car-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .car-photo.img-fail img { display: none; }
+    .detail-art .car-photo { height: 260px; border: 1px solid var(--line); border-radius: 14px; }
+    .detail-art .car-photo img { object-fit: cover; }
+    .compare-art .car-photo { height: 200px; border-radius: var(--r); }
     .vc-body { padding: .9rem 1.1rem 1.1rem; display: flex; flex-direction: column; flex: 1; }
     .vehicle-card h3 { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
     .vehicle-card .meta { color: var(--mut); font-size: .84rem; margin-top: .1rem; }
@@ -1337,7 +1354,7 @@ function html(title, content, env = {}, opts = {}) {
       </div>
     </div>
     <div class="footer-note">
-      <p>© 2026 Vehicle Lease. Prices shown are indicative and change frequently — always confirm the current price, term and mileage allowance with the lease provider before ordering.</p>
+      <p>© 2026 Vehicle Lease. Prices shown are indicative and change frequently — always confirm the current price, term and mileage allowance with the lease provider before ordering. Vehicle photos via <a href="https://commons.wikimedia.org" rel="noopener">Wikimedia Commons</a>; images show representative model generations and may differ from the current UK specification.</p>
     </div>
   </footer>
 </body>
